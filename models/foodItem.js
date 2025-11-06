@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const foodItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -8,11 +8,11 @@ const foodItemSchema = new mongoose.Schema({
   expiryDate: { type: Date, required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // link to user
 
-  // New fields for wastage tracking
+  // ✅ Fields for wastage tracking
   isWasted: { type: Boolean, default: false },
   wastedAt: { type: Date, default: null },
 });
 
 const FoodItem = mongoose.model("FoodItem", foodItemSchema);
 
-module.exports = FoodItem;
+export default FoodItem;

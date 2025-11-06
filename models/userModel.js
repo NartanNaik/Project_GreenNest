@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -71,7 +71,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-
 // ✅ Automatically hash password before saving
 userSchema.pre("save", async function (next) {
   // Only hash if the password was modified and exists
@@ -81,13 +80,12 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-
 // ✅ Compare plain text password with hashed password
 userSchema.methods.comparePassword = async function (plainPassword) {
   if (!this.passwordHash) return false; // Prevent comparing for Google users
   return bcrypt.compare(plainPassword, this.passwordHash);
 };
 
-
 const User = mongoose.model("User", userSchema);
-module.exports = User;
+
+export default User;

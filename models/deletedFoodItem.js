@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const deletedFoodItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -14,4 +14,4 @@ const deletedFoodItemSchema = new mongoose.Schema({
 
 const DeletedFoodItem = mongoose.model("DeletedFoodItem", deletedFoodItemSchema);
 
-module.exports = DeletedFoodItem; 
+export default DeletedFoodItem;

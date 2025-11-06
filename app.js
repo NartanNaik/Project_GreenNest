@@ -1,33 +1,47 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
-const session = require("express-session");
-const cron = require("node-cron");
-const fetch = require("node-fetch");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+import dotenv from "dotenv";
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import session from "express-session";
+import cron from "node-cron";
+import fetch from "node-fetch";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// === Convert __dirname for ESM ===
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// === Load environment variables ===
+dotenv.config();
 
 // === Utils & Models ===
-const sendOtpEmail = require("./client/utils/sendOtpEmail");
-const generateOTP = require("./client/utils/generateOtp");
-const User = require("./models/userModel");
-const auth = require("./middleware/auth");
+import sendOtpEmail from "./client/utils/sendOtpEmail.js";
+import generateOTP from "./client/utils/generateOtp.js";
+import User from "./models/userModel.js";
+import auth from "./middleware/auth.js";
 
-// === Route Imports ===
-const foodRoutes = require("./routes/foodRoutes");
-const wastageRoutes = require("./routes/wastageRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-const reportRoutes = require("./routes/reportRoutes");
+// === Routes ===
+import foodRoutes from "./routes/foodRoutes.js";
+import wastageRoutes from "./routes/wastageRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
-const { OAuth2Client } = require("google-auth-library");
+// === Google Auth Client ===
+import { OAuth2Client } from "google-auth-library";
+
+
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 
 // === File Upload Setup ===
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
@@ -42,9 +56,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // === Middleware ===
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json()); // ✅ Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // ✅ Parse URL-encoded/form bodies
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+
+app.use("/ai", aiRoutes);
 
 app.use(
   session({
@@ -322,4 +338,30 @@ cron.schedule("0 8 * * *", async () => {
 // === Start Server ===
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
+
+// ✅ Fetch all farmers (public route)
+app.get("/farmers", async (req, res) => {
+  try {
+    // Find all users who are farmers
+    const farmers = await User.find({ role: "farmer" }).select(
+      "email firstName lastName farmerDocPath"
+    );
+
+    // Format a name field for display
+    const formattedFarmers = farmers.map((farmer) => ({
+      id: farmer._id,
+      name: farmer.firstName
+        ? `${farmer.firstName} ${farmer.lastName || ""}`
+        : farmer.email.split("@")[0],
+      email: farmer.email,
+      location: "Not provided", // optional: add real field later
+      farmerDocPath: farmer.farmerDocPath,
+    }));
+
+    res.json(formattedFarmers);
+  } catch (err) {
+    console.error("Error fetching farmers:", err);
+    res.status(500).json({ message: "Failed to fetch farmers" });
+  }
 });
