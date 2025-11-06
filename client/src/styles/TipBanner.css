@@ -1,0 +1,115 @@
+.tip-banner {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  max-width: 350px;
+  background: linear-gradient(135deg, #4CAF50, #81C784);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 900;
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.tip-banner.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.tip-icon {
+  font-size: 2rem;
+  margin-bottom: 5px;
+  animation: pulse 2s infinite;
+}
+
+.tip-text {
+  margin: 0;
+  padding: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tip-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.tip-next,
+.tip-dismiss {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.tip-next {
+  flex-grow: 0;
+}
+
+.tip-next:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.tip-dismiss {
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.tip-dismiss:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Animation for the icon */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Dark mode styles */
+body.dark .tip-banner {
+  background: linear-gradient(135deg, #388E3C, #66BB6A);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .tip-banner {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+    bottom: 15px;
+  }
+}
+
+/* Accessibility */
+.tip-banner:focus-within {
+  outline: 3px solid #fff;
+}
+
+/* Random colors for tips - adds variety */
+.tip-banner:nth-of-type(2n) { background: linear-gradient(135deg, #2196F3, #64B5F6); }
+.tip-banner:nth-of-type(3n) { background: linear-gradient(135deg, #9C27B0, #BA68C8); }
+.tip-banner:nth-of-type(4n) { background: linear-gradient(135deg, #FF5722, #FF8A65); }
+.tip-banner:nth-of-type(5n) { background: linear-gradient(135deg, #FF9800, #FFB74D); } 

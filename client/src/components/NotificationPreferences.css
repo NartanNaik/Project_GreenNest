@@ -1,0 +1,211 @@
+.notification-preferences-container {
+  background-color: var(--card-bg-color, white);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+.dark .notification-preferences-container {
+  background-color: var(--card-bg-color, #222);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.notification-preferences-container h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: var(--text-color, #333);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  padding-bottom: 12px;
+}
+
+.preference-section {
+  margin-bottom: 24px;
+}
+
+.preference-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.preference-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.preference-info {
+  margin-left: 16px;
+}
+
+.preference-info span {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.preference-description {
+  color: var(--secondary-text-color, #666);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  margin-top: 2px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--primary-color, #4CAF50);
+}
+
+input:focus + .toggle-slider {
+  box-shadow: 0 0 1px var(--primary-color, #4CAF50);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(22px);
+}
+
+/* Days input */
+.days-input {
+  display: flex;
+  flex-direction: column;
+}
+
+.days-input label {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.days-input select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #ddd);
+  background-color: var(--input-bg-color, white);
+  color: var(--text-color, #333);
+  font-size: 14px;
+  width: 150px;
+}
+
+.dark .days-input select {
+  background-color: var(--input-bg-color, #333);
+  color: var(--text-color, #eee);
+  border-color: var(--border-color, #444);
+}
+
+/* Save button */
+.save-preferences-button {
+  background-color: var(--primary-color, #4CAF50);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.save-preferences-button:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.save-preferences-button:disabled {
+  background-color: #9e9e9e;
+  cursor: not-allowed;
+}
+
+/* Status messages */
+.preferences-error,
+.preferences-success {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.preferences-error {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.preferences-success {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.preferences-loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--secondary-text-color, #666);
+}
+
+/* Tips section */
+.notification-tips {
+  margin-top: 24px;
+  background-color: rgba(33, 150, 243, 0.1);
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.notification-tips h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #2196F3;
+}
+
+.notification-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.notification-tips li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.notification-tips li:last-child {
+  margin-bottom: 0;
+} 

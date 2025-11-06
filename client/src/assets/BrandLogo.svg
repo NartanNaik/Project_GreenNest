@@ -1,0 +1,10 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafGradient" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#43b04a"/>
+      <stop offset="1" stop-color="#2196f3"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 8 C48 16, 56 40, 32 56 C8 40, 16 16, 32 8 Z" fill="url(#leafGradient)" stroke="#219150" stroke-width="3"/>
+  <path d="M32 56 Q34 36 32 8" stroke="#219150" stroke-width="2" fill="none"/>
+</svg> 
