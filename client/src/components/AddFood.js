@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -6,6 +6,7 @@ function AddFood() {
   const [image, setImage] = useState(null);
   const [foodData, setFoodData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null); // 👈 Reference to file input
   const navigate = useNavigate();
 
   const handleImageUpload = async (e) => {
@@ -21,13 +22,10 @@ function AddFood() {
 
     try {
       setLoading(true);
-
-      // ✅ Corrected API endpoint — matches your backend aiRoutes.js
       const res = await axios.post("http://localhost:5000/ai/analyze", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Backend returns { message, data }, so extract `data`
       setFoodData(res.data.data);
     } catch (err) {
       console.error("❌ Error scanning image:", err);
@@ -42,12 +40,27 @@ function AddFood() {
       const token = localStorage.getItem("token");
       if (!token) return alert("Please log in first.");
 
-      // Save the analyzed food to inventory
-      await axios.post(
-        "http://localhost:5000/food/add",
-        foodData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (!foodData) {
+        return alert("No food data to save. Please scan an image first.");
+      }
+
+      const today = new Date();
+
+      const payload = {
+        name: foodData.name || "Unknown Food",
+        category: foodData.category || "Misc",
+        shelfLife: foodData.shelfLife || 3,
+        mDate: today.toISOString(),
+      };
+
+      console.log("📦 Sending payload to backend:", payload);
+
+      await axios.post("http://localhost:5000/food/add", payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       alert("✅ Food added successfully!");
       navigate("/inventory");
@@ -57,13 +70,33 @@ function AddFood() {
     }
   };
 
+  // 🧹 Cancel / Reset function
+  const handleCancel = () => {
+    if (window.confirm("Are you sure you want to remove this item?")) {
+      setImage(null);
+      setFoodData(null);
+      setLoading(false);
+
+      // 👇 Reset file input value so the same file can be reselected
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <div className="add-food-container">
       <h2>Smart Food Scanner 🤖</h2>
 
       {/* Image upload box */}
       <label className="upload-area">
-        <input type="file" accept="image/*" onChange={handleImageUpload} hidden />
+        <input
+          ref={fileInputRef} // 👈 attach the ref
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          hidden
+        />
         <div className="upload-box">
           {image ? (
             <img
@@ -91,9 +124,22 @@ function AddFood() {
           <p>🧊 Best Stored: {foodData.storage || "Unknown"}</p>
           <p>⌛ Shelf Life: {foodData.shelfLife || "?"} days</p>
 
-          <button className="btn add-btn" onClick={handleSave}>
-            Save to Inventory
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button className="btn add-btn" onClick={handleSave}>
+              Save to Inventory
+            </button>
+            <button
+              className="btn cancel-btn"
+              style={{
+                backgroundColor: "#f44336",
+                color: "white",
+                border: "none",
+              }}
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>

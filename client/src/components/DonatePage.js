@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const DonatePage = () => {
   const [farmers, setFarmers] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFarmers = async () => {
@@ -16,6 +18,11 @@ const DonatePage = () => {
     fetchFarmers();
   }, []);
 
+  const handleMessage = (farmerId) => {
+    // navigate to chat page in same tab
+    navigate(`/chat/${farmerId}`);
+  };
+
   return (
     <div className="donate-container">
       <h2>Support Our Farmers 🤝</h2>
@@ -25,7 +32,16 @@ const DonatePage = () => {
             <h3>{farmer.name}</h3>
             <p>Location: {farmer.location}</p>
             <p>Contact: {farmer.email}</p>
-            <button className="btn donate-btn">Donate Food</button>
+
+            <div className="button-group">
+              <button className="btn donate-btn">Donate Food</button>
+              <button
+                className="btn message-btn"
+                onClick={() => handleMessage(farmer.id)}
+              >
+                Message
+              </button>
+            </div>
           </div>
         ))}
       </div>

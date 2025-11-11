@@ -157,12 +157,24 @@ const LoginPage = () => {
           }}
         >
           <GoogleLogin
-            onSuccess={(credentialResponse) => {
-              const token = credentialResponse.credential;
-              loginWithGoogle(token); // send token to backend
+            onSuccess={async (credentialResponse) => {
+              try {
+                const token = credentialResponse.credential;
+
+                // ✅ Use your AuthContext method instead of raw axios
+                const user = await loginWithGoogle(token);
+
+                console.log("✅ Google login success:", user);
+                navigate("/home"); // ✅ Navigate immediately after login
+
+              } catch (err) {
+                console.error("❌ Google login failed:", err.response?.data || err.message);
+                setError(err.response?.data?.message || "Google login failed. Please try again.");
+              }
             }}
-            onError={() => console.log("Google Login Failed")}
+            onError={() => console.error("❌ Google Login Failed")}
           />
+
 
           <button
             type="button"

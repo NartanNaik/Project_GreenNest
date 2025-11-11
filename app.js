@@ -12,6 +12,9 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import http from "http";                  // ✅ added
+import { Server } from "socket.io";       // ✅ added
+import Message from "./models/chatModel.js"; // ✅ added
 
 // === Convert __dirname for ESM ===
 const __filename = fileURLToPath(import.meta.url);
@@ -35,13 +38,10 @@ import aiRoutes from "./routes/aiRoutes.js";
 
 // === Google Auth Client ===
 import { OAuth2Client } from "google-auth-library";
-
-
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
 
 // === File Upload Setup ===
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
@@ -55,13 +55,45 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
+// ✅ Get all messages between farmer and user
+app.get("/api/messages/:farmerId/:userId", async (req, res) => {
+  try {
+    const { farmerId, userId } = req.params;
+    const messages = await Message.find({
+      $or: [
+        { senderId: farmerId, receiverId: userId },
+        { senderId: userId, receiverId: farmerId },
+      ],
+    }).sort({ timestamp: 1 });
+
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching messages", error: err.message });
+  }
+});
+
+// ✅ Save a new message
+app.post("/api/messages", async (req, res) => {
+  try {
+    const { senderId, receiverId, text } = req.body;
+    const msg = new Message({ senderId, receiverId, text });
+    await msg.save();
+
+    // Notify via Socket.IO
+    io.emit("receiveMessage", msg);
+
+    res.status(201).json(msg);
+  } catch (err) {
+    res.status(500).json({ message: "Error saving message", error: err.message });
+  }
+});
+
 // === Middleware ===
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-app.use(express.json()); // ✅ Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // ✅ Parse URL-encoded/form bodies
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use("/ai", aiRoutes);
-
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "session-secret",
@@ -82,6 +114,99 @@ mongoose
 // === OTP Memory Store ===
 const otpStore = {};
 
+app.post("/api/farmer/setup", async (req, res) => {
+  try {
+    const { fullName, farmingType, crops, farmSize, country, state, district } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const farmerData = {
+      fullName,
+      farmingType,
+      crops,
+      farmSize,
+      country,
+      state,
+      district,
+      updatedAt: new Date(),
+    };
+
+    await User.findByIdAndUpdate(userId, { farmerDetails: farmerData }, { new: true });
+
+    res.status(200).json({ message: "Farmer details saved successfully" });
+  } catch (err) {
+    console.error("❌ Error saving farmer setup:", err);
+    res.status(500).json({ message: "Failed to save farmer details" });
+  }
+});
+
+
+// === Chat Routes ===
+// ✅ Get all messages for a specific farmer
+// ✅ Get all messages for a specific farmer (excluding deleted ones)
+app.get("/messages/:farmerId", async (req, res) => {
+  try {
+    const messages = await Message.find({
+      farmerId: req.params.farmerId,
+      deleted: false, // ✅ only active messages
+    }).sort({ timestamp: 1 });
+
+    res.json(messages);
+  } catch (err) {
+    console.error("❌ Error fetching messages:", err);
+    res.status(500).json({ message: "Server error fetching messages" });
+  }
+});
+
+
+
+app.post("/messages", async (req, res) => {
+  const message = new Message(req.body);
+  await message.save();
+  res.status(201).json(message);
+});
+
+// ✅ Delete a specific message
+app.delete("/messages/:id", async (req, res) => {
+  try {
+    const message = await Message.findByIdAndUpdate(
+      req.params.id,
+      { deleted: true }, // ✅ mark as deleted
+      { new: true }
+    );
+    if (!message) return res.status(404).json({ message: "Message not found" });
+    res.json({ message: "Message deleted successfully" });
+  } catch (err) {
+    console.error("❌ Error deleting message:", err);
+    res.status(500).json({ message: "Server error deleting message" });
+  }
+});
+
+// ✅ Clear all messages for a specific farmer
+app.delete("/messages/clear/:farmerId", async (req, res) => {
+  try {
+    const { farmerId } = req.params;
+
+    // If you’re marking as deleted (not removing from DB):
+    await Message.updateMany(
+      { farmerId },
+      { $set: { deleted: true } }
+    );
+
+    // If you prefer hard delete (actually remove them), replace above with:
+    // await Message.deleteMany({ farmerId });
+
+    res.json({ message: "All messages cleared successfully" });
+  } catch (err) {
+    console.error("❌ Error clearing messages:", err);
+    res.status(500).json({ message: "Server error clearing messages" });
+  }
+});
+
+
 // ================= AUTH ROUTES =================
 
 // ✅ Registration Route
@@ -90,15 +215,11 @@ app.post("/auth/register", upload.single("farmerDocs"), async (req, res) => {
     const { email, password, role } = req.body;
     const farmerDoc = req.file;
 
-    console.log("📥 Register request:", req.body);
-
-    if (!email || !password) {
+    if (!email || !password)
       return res.status(400).json({ message: "Email and password are required" });
-    }
 
-    if (role === "farmer" && !farmerDoc) {
+    if (role === "farmer" && !farmerDoc)
       return res.status(400).json({ message: "Farmer document required" });
-    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
@@ -113,56 +234,94 @@ app.post("/auth/register", upload.single("farmerDocs"), async (req, res) => {
     });
 
     await newUser.save();
-    console.log("✅ User registered:", email);
     res.status(201).json({ message: "Registration successful" });
   } catch (err) {
     console.error("❌ Registration error:", err);
-    res.status(500).json({
-      message: "Server error during registration",
-      error: err.message,
-    });
+    res.status(500).json({ message: "Server error during registration" });
   }
 });
 
-// ✅ Login Route
+// ✅ Manual Login Route
+// ✅ Manual Login Route (Secure & Correct)
 app.post("/auth/login", async (req, res) => {
-  console.log("📩 Incoming login body:", req.body);
-
-  const { email, password } = req.body;
-  if (!email || !password) {
-    console.log("❌ Missing fields:", { email, password });
-    return res.status(400).json({ message: "Email and password are required" });
-  }
-
   try {
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password are required" });
+
+    // 🔍 Find user
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
 
-    if (user.purpose === "google") {
-      return res.status(400).json({ message: "Please login with Google" });
-    }
+    // 🔐 Compare hashed password using bcrypt
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid password" });
 
-    const match = await user.comparePassword(password);
-    if (!match) return res.status(401).json({ message: "Incorrect password" });
-
+    // 🧾 Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "7d" }
     );
 
-    console.log("✅ Login successful:", email);
+    // 🎯 Respond with token and basic info
     res.json({
+      message: "✅ Login successful",
       token,
-      email: user.email,
       role: user.role,
-      message: "Login successful",
+      email: user.email,
     });
   } catch (err) {
     console.error("❌ Login error:", err);
-    res.status(500).json({ message: "Login error", error: err.message });
+    res.status(500).json({ message: "Server error during login" });
   }
 });
+
+
+
+// ✅ Save or Update User Location
+app.post("/api/save-location", async (req, res) => {
+  try {
+    const { userId, coords } = req.body;
+
+    // 🧩 Check for missing or invalid userId
+    if (!userId || userId === "undefined") {
+      console.error("⚠️ Invalid userId received in save-location:", userId);
+      return res.status(400).json({ message: "Invalid or missing user ID" });
+    }
+
+    if (!coords || !coords.lat || !coords.lng) {
+      return res.status(400).json({ message: "Invalid coordinates" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.location = {
+      latitude: coords.lat,
+      longitude: coords.lng,
+      updatedAt: new Date(),
+    };
+
+    await user.save();
+
+    console.log(`📍 Location updated for ${user.email}:`, user.location);
+
+    res.json({
+      message: "Location saved successfully!",
+      location: user.location,
+    });
+  } catch (err) {
+    console.error("❌ Error saving location:", err);
+    res.status(500).json({ message: "Error saving location", error: err.message });
+  }
+});
+
 
 // ✅ Authenticated User Info
 app.get("/auth/me", auth, async (req, res) => {
@@ -177,29 +336,24 @@ app.get("/auth/me", auth, async (req, res) => {
   }
 });
 
+// ✅ Google Login
 app.post("/auth/google", async (req, res) => {
   try {
     const { token } = req.body;
-
-    if (!token) {
+    if (!token)
       return res.status(400).json({ message: "Google token is required" });
-    }
 
-    // 🔍 Verify the token with Google
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID, // must match your frontend’s clientId
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
     const email = payload.email;
     const googleId = payload.sub;
 
-    // 🔎 Check if user already exists
     let user = await User.findOne({ email });
-
     if (!user) {
-      // 🆕 Create a new user if not found
       user = new User({
         email,
         googleId,
@@ -209,16 +363,12 @@ app.post("/auth/google", async (req, res) => {
         role: "user",
       });
       await user.save();
-    } else {
-      // 🧩 Update googleId if missing (user signed up manually earlier)
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.purpose = "google";
-        await user.save();
-      }
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      user.purpose = "google";
+      await user.save();
     }
 
-    // 🪙 Generate your own JWT for session authentication
     const appToken = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "secretkey",
@@ -233,10 +383,7 @@ app.post("/auth/google", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Google login verification failed:", error);
-    res.status(401).json({
-      message: "Invalid or expired Google token",
-      error: error.message,
-    });
+    res.status(401).json({ message: "Invalid or expired Google token" });
   }
 });
 
@@ -254,22 +401,19 @@ app.post("/auth/request-otp", async (req, res) => {
     otpStore[email] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
 
     const result = await sendOtpEmail(email, otp);
-    if (!result.success) {
+    if (!result.success)
       return res.status(500).json({ message: "Failed to send OTP email" });
-    }
 
     res.json({ message: "OTP sent successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to send OTP", error: err.message });
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 });
 
 app.post("/auth/reset-password", async (req, res) => {
   const { email, otp, newPassword } = req.body;
   if (!email || !otp || !newPassword)
-    return res
-      .status(400)
-      .json({ message: "Email, OTP, and new password are required" });
+    return res.status(400).json({ message: "Missing required fields" });
 
   const record = otpStore[email];
   if (!record) return res.status(400).json({ message: "No OTP requested" });
@@ -279,17 +423,12 @@ app.post("/auth/reset-password", async (req, res) => {
 
   delete otpStore[email];
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
 
-    user.passwordHash = newPassword;
-    await user.save();
-
-    res.json({ message: "Password reset successful" });
-  } catch (err) {
-    res.status(500).json({ message: "Reset failed", error: err.message });
-  }
+  user.passwordHash = newPassword;
+  await user.save();
+  res.json({ message: "Password reset successful" });
 });
 
 // === Other Routes ===
@@ -335,33 +474,110 @@ cron.schedule("0 8 * * *", async () => {
   }
 });
 
-// === Start Server ===
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
-
 // ✅ Fetch all farmers (public route)
 app.get("/farmers", async (req, res) => {
   try {
-    // Find all users who are farmers
     const farmers = await User.find({ role: "farmer" }).select(
       "email firstName lastName farmerDocPath"
     );
 
-    // Format a name field for display
     const formattedFarmers = farmers.map((farmer) => ({
       id: farmer._id,
       name: farmer.firstName
         ? `${farmer.firstName} ${farmer.lastName || ""}`
         : farmer.email.split("@")[0],
       email: farmer.email,
-      location: "Not provided", // optional: add real field later
+      location: "Not provided",
       farmerDocPath: farmer.farmerDocPath,
     }));
 
     res.json(formattedFarmers);
   } catch (err) {
-    console.error("Error fetching farmers:", err);
     res.status(500).json({ message: "Failed to fetch farmers" });
   }
+});
+
+// ✅ Fetch single farmer by ID
+app.get("/farmers/:id", async (req, res) => {
+  try {
+    const farmer = await User.findById(req.params.id).select(
+      "email firstName lastName farmerDocPath"
+    );
+
+    if (!farmer) {
+      return res.status(404).json({ message: "Farmer not found" });
+    }
+
+    const formattedFarmer = {
+      id: farmer._id,
+      name: farmer.firstName
+        ? `${farmer.firstName} ${farmer.lastName || ""}`
+        : farmer.email.split("@")[0],
+      email: farmer.email,
+      location: "Not provided",
+      farmerDocPath: farmer.farmerDocPath,
+    };
+
+    res.json(formattedFarmer);
+  } catch (err) {
+    console.error("❌ Error fetching farmer:", err);
+    res.status(500).json({ message: "Error fetching farmer" });
+  }
+});
+
+
+// === SOCKET.IO INTEGRATION (REAL-TIME CHAT) ===
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("🟢 Client connected:", socket.id);
+
+  // ✅ Join farmer-specific chat room
+  socket.on("joinRoom", (farmerId) => {
+    socket.join(farmerId);
+    console.log(`📦 User joined room: ${farmerId}`);
+  });
+
+  // ✅ Handle new message (save + broadcast to room)
+  socket.on("sendMessage", async (msg) => {
+    try {
+      // Save message in DB
+      const savedMsg = await new Message(msg).save();
+
+      // ✅ Emit the saved message (includes _id, timestamp, etc.)
+      io.to(msg.farmerId).emit("receiveMessage", savedMsg);
+
+      console.log("💬 Message sent & broadcast:", savedMsg);
+    } catch (err) {
+      console.error("❌ Error saving message:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
+});
+
+// ✅ Fetch all normal users
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find({ role: "user" })
+      .select("firstName lastName email role");
+    res.json(users);
+  } catch (err) {
+    console.error("❌ Error fetching users:", err);
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
+
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server (HTTP + Socket.IO) running on http://localhost:${PORT}`);
 });

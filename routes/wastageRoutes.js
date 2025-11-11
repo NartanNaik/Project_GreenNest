@@ -119,6 +119,7 @@ router.get("/chart", authenticate, async (req, res) => {
 
     console.log(`🔍 Looking for wasted items between ${startDate} and ${endDate}`);
 
+    // ✅ Only include ACTIVE items, exclude deleted ones completely
     const activeFoodItems = await FoodItem.find({
       userId: req.user.userId,
       $or: [
@@ -127,20 +128,20 @@ router.get("/chart", authenticate, async (req, res) => {
       ],
     });
 
-    const deletedFoodItems = await DeletedFoodItem.find({
-      userId: req.user.userId,
-      clearedFromGraph: false,
-      $or: [
-        { wasWasted: true, wastedAt: { $gte: startDate, $lte: endDate } },
-        { expiryDate: { $gte: startDate, $lte: endDate, $ne: null } },
-        { deletedAt: { $gte: startDate, $lte: endDate } },
-      ],
-    });
+    // ❌ We no longer merge DeletedFoodItem data here
+    // Deleted items should not appear in wastage/expired graph
+
+    // Optional: Clean old deleted entries that were already shown before
+    await DeletedFoodItem.updateMany(
+      { userId: req.user.userId, clearedFromGraph: false },
+      { $set: { clearedFromGraph: true } }
+    );
 
     const categoryMap = {};
-    [...activeFoodItems, ...deletedFoodItems].forEach((item) => {
+    activeFoodItems.forEach((item) => {
       categoryMap[item.category] = (categoryMap[item.category] || 0) + 1;
     });
+
 
     const categories = Object.keys(categoryMap).map((k) => ({
       name: k,

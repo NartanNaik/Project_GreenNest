@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    lowercase: true, // Normalize email
+    lowercase: true,
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
   },
 
@@ -14,15 +14,13 @@ const userSchema = new mongoose.Schema({
   middleName: { type: String },
   lastName: { type: String, default: "" },
 
-  purpose: { type: String, required: true }, // 'manual' or 'google'
-
+  purpose: { type: String, required: true }, // 'manual' | 'google'
   recoveryEmail: { type: String, default: null },
 
   passwordHash: {
     type: String,
     required: function () {
-      // ❗ password required only if not Google
-      return this.purpose !== "google";
+      return this.purpose !== "google"; // required only for manual users
     },
   },
 
@@ -35,9 +33,18 @@ const userSchema = new mongoose.Schema({
     default: "user",
   },
 
-  farmerDocPath: {
-    type: String,
-    default: null,
+  farmerDocPath: { type: String, default: null },
+
+  // ✅ Farmer profile setup data
+  farmerDetails: {
+    fullName: { type: String },
+    farmingType: { type: String }, // e.g., "Vegetable Farming"
+    crops: { type: String }, // comma-separated crop list
+    farmSize: { type: Number },
+    country: { type: String },
+    state: { type: String },
+    district: { type: String },
+    updatedAt: { type: Date },
   },
 
   // ✅ Notification Preferences
@@ -58,8 +65,8 @@ const userSchema = new mongoose.Schema({
 
   // ✅ Performance Tracking
   achievements: {
-    wasteReduction: { type: Number, default: 0 }, // % reduction over time
-    consecutiveSaves: { type: Number, default: 0 }, // Saved items streak
+    wasteReduction: { type: Number, default: 0 },
+    consecutiveSaves: { type: Number, default: 0 },
     donationsMade: { type: Number, default: 0 },
     lastMonthWastePercentage: { type: Number, default: 0 },
     currentMonthWastePercentage: { type: Number, default: 0 },
@@ -73,17 +80,24 @@ const userSchema = new mongoose.Schema({
 
 // ✅ Automatically hash password before saving
 userSchema.pre("save", async function (next) {
-  // Only hash if the password was modified and exists
   if (this.isModified("passwordHash") && this.passwordHash) {
-    this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
+    const salt = await bcrypt.genSalt(10);
+    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
   }
   next();
 });
 
 // ✅ Compare plain text password with hashed password
 userSchema.methods.comparePassword = async function (plainPassword) {
-  if (!this.passwordHash) return false; // Prevent comparing for Google users
+  if (!this.passwordHash) return false;
   return bcrypt.compare(plainPassword, this.passwordHash);
+};
+
+// ✅ Optional: Remove passwordHash from JSON output
+userSchema.methods.toJSON = function () {
+  const user = this.toObject();
+  delete user.passwordHash;
+  return user;
 };
 
 const User = mongoose.model("User", userSchema);

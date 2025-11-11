@@ -68,19 +68,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   // ✅ Google login (after redirect with token)
- const loginWithGoogle = async (googleToken) => {
+const loginWithGoogle = async (googleToken) => {
   try {
-    const response = await axios.post("http://localhost:5000/auth/google", { token: googleToken });
+    const response = await axios.post("http://localhost:5000/auth/google", {
+      token: googleToken,
+    });
 
     const { token, email, role } = response.data;
+
     localStorage.setItem("token", token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    setUser({ email, role });
+    const newUser = { email, role, token };
+    setUser(newUser);
     setIsAuthenticated(true);
+
     console.log("✅ Google login successful:", response.data);
+    return newUser; // ✅ Return this so LoginPage can act instantly
   } catch (err) {
     console.error("❌ Google login failed:", err.response?.data || err.message);
+    throw err;
   }
 };
 

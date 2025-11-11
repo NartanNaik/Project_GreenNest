@@ -27,8 +27,8 @@ const WastageGraph = () => {
       mode === "day"
         ? date.format("YYYY-MM-DD")
         : mode === "month"
-        ? date.format("YYYY-MM")
-        : date.format("YYYY");
+          ? date.format("YYYY-MM")
+          : date.format("YYYY");
 
     try {
       // Fetch wastage data
@@ -41,9 +41,15 @@ const WastageGraph = () => {
 
       const { data } = res;
       console.log("Chart data received:", data);
-      setChartData(data.categories || []);
-      setTotalCount(data.total || 0);
-      
+      // ✅ Filter out deleted or invalid entries (extra safety)
+      const cleaned = (data.categories || []).filter(
+        (item) => item.value > 0 && !item.deleted
+      );
+
+      setChartData(cleaned);
+      setTotalCount(cleaned.reduce((sum, item) => sum + item.value, 0));
+
+
       // Fetch summary stats
       try {
         console.log("Fetching summary stats...");
@@ -52,15 +58,18 @@ const WastageGraph = () => {
           {
             headers: { Authorization: `Bearer ${token}` },
           }
-        );        
-        
+        );
+
         if (summaryRes.data) {
           console.log("Summary data received:", summaryRes.data);
+          // ✅ Ensure summary only includes active (non-deleted) items
+          const { totalFood = 0, wastedFood = 0, remainingFood = 0 } = summaryRes.data;
           setSummaryStats({
-            totalFood: summaryRes.data.totalFood || 0,
-            wastedFood: summaryRes.data.wastedFood || 0,
-            remainingFood: summaryRes.data.remainingFood || 0
+            totalFood,
+            wastedFood,
+            remainingFood: Math.max(0, totalFood - wastedFood)
           });
+
         }
       } catch (summaryErr) {
         console.error("Failed to load summary stats", summaryErr);
@@ -71,7 +80,7 @@ const WastageGraph = () => {
           remainingFood: 0
         });
       }
-      
+
       setError(null);
     } catch (err) {
       console.error("Failed to load chart data", err);
@@ -95,7 +104,7 @@ const WastageGraph = () => {
 
   const clearGraphData = async () => {
     const token = localStorage.getItem("token");
-    
+
     // Ask for confirmation with reset options
     const resetOption = window.confirm(
       "Choose how to reset wastage data:\n\n" +
@@ -107,13 +116,13 @@ const WastageGraph = () => {
       // User chose to reset current view only
       try {
         setLoading(true);
-        
+
         const response = await axios.post(
           `http://localhost:5000/wastage/reset`,
           { mode, date: date.format("YYYY-MM-DD") },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Reset local state completely
         setChartData([]);
         setTotalCount(0);
@@ -122,10 +131,10 @@ const WastageGraph = () => {
           wastedFood: 0,
           remainingFood: prev.totalFood
         }));
-        
+
         // Show confirmation with the number of affected items
         alert(`${response.data.affected} items have been permanently unmarked as wasted.`);
-        
+
         // Refresh data
         fetchData();
       } catch (err) {
@@ -141,17 +150,17 @@ const WastageGraph = () => {
         "• Click OK to PERMANENTLY RESET ALL WASTAGE DATA (all time)\n" +
         "• Click CANCEL to cancel the operation"
       );
-      
+
       if (fullResetConfirm) {
         try {
           setLoading(true);
-          
+
           const response = await axios.post(
             `http://localhost:5000/wastage/reset`,
             { mode: "all", date: date.format("YYYY-MM-DD") },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          
+
           // Reset local state completely
           setChartData([]);
           setTotalCount(0);
@@ -160,10 +169,10 @@ const WastageGraph = () => {
             wastedFood: 0,
             remainingFood: prev.totalFood
           }));
-          
+
           // Show confirmation with the number of affected items
           alert(`PERMANENT RESET COMPLETE: ${response.data.affected} items have been unmarked as wasted across all time periods.`);
-          
+
           // Refresh data
           fetchData();
         } catch (err) {
@@ -181,7 +190,7 @@ const WastageGraph = () => {
     fetchData();
     // Set up interval to refresh data every 30 seconds
     const interval = setInterval(fetchData, 30000);
-    
+
     // Clean up the interval when component unmounts
     return () => clearInterval(interval);
   }, [fetchData]);
@@ -191,8 +200,8 @@ const WastageGraph = () => {
       mode === "day"
         ? date.subtract(1, "day")
         : mode === "month"
-        ? date.subtract(1, "month")
-        : date.subtract(1, "year")
+          ? date.subtract(1, "month")
+          : date.subtract(1, "year")
     );
   };
 
@@ -202,8 +211,8 @@ const WastageGraph = () => {
         mode === "day"
           ? date.add(1, "day")
           : mode === "month"
-          ? date.add(1, "month")
-          : date.add(1, "year")
+            ? date.add(1, "month")
+            : date.add(1, "year")
       );
     }
   };
@@ -241,12 +250,12 @@ const WastageGraph = () => {
     };
     return colorMap[category] || '#999';
   };
-  
+
   // Get options for the wastage pie chart
   const getChartOption = () => {
     // Determine if we're in dark mode
     const isDarkMode = document.body.classList.contains('dark');
-    
+
     return {
       backgroundColor: isDarkMode ? '#1e2130' : 'transparent',
       title: {
@@ -254,8 +263,8 @@ const WastageGraph = () => {
           mode === "day"
             ? "DD MMM, YYYY"
             : mode === "month"
-            ? "MMM YYYY"
-            : "YYYY"
+              ? "MMM YYYY"
+              : "YYYY"
         )})`,
         subtext: `Total: ${totalCount}`,
         left: "center",
@@ -285,9 +294,9 @@ const WastageGraph = () => {
         type: 'scroll',
         orient: 'horizontal',
         bottom: 10,
-        textStyle: { 
-          color: isDarkMode ? "#fff" : "#333", 
-          fontSize: 12 
+        textStyle: {
+          color: isDarkMode ? "#fff" : "#333",
+          fontSize: 12
         },
         pageIconColor: isDarkMode ? '#fff' : '#333',
         pageTextStyle: { color: isDarkMode ? '#fff' : '#333' },
@@ -337,41 +346,41 @@ const WastageGraph = () => {
   return (
     <div className="wastage-graph-container">
       <h2>Food Wastage Analysis</h2>
-      
+
       {/* Summary Stats Cards */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "center", 
-        gap: "15px", 
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: "15px",
         marginBottom: "20px",
         flexWrap: "wrap"
       }}>
-        <div style={{ 
-          background: "rgba(84, 112, 198, 0.2)", 
-          padding: "12px 20px", 
-          borderRadius: "10px", 
+        <div style={{
+          background: "rgba(84, 112, 198, 0.2)",
+          padding: "12px 20px",
+          borderRadius: "10px",
           minWidth: "120px",
           border: "1px solid rgba(84, 112, 198, 0.5)"
         }}>
           <div style={{ fontSize: "12px", opacity: 0.8 }}>TOTAL FOOD</div>
           <div style={{ fontSize: "24px", fontWeight: "bold" }}>{summaryStats.totalFood}</div>
         </div>
-        
-        <div style={{ 
-          background: "rgba(238, 102, 102, 0.2)", 
-          padding: "12px 20px", 
-          borderRadius: "10px", 
+
+        <div style={{
+          background: "rgba(238, 102, 102, 0.2)",
+          padding: "12px 20px",
+          borderRadius: "10px",
           minWidth: "120px",
           border: "1px solid rgba(238, 102, 102, 0.5)"
         }}>
           <div style={{ fontSize: "12px", opacity: 0.8 }}>WASTED</div>
           <div style={{ fontSize: "24px", fontWeight: "bold" }}>{summaryStats.wastedFood}</div>
         </div>
-        
-        <div style={{ 
-          background: "rgba(105, 219, 124, 0.2)", 
-          padding: "12px 20px", 
-          borderRadius: "10px", 
+
+        <div style={{
+          background: "rgba(105, 219, 124, 0.2)",
+          padding: "12px 20px",
+          borderRadius: "10px",
           minWidth: "120px",
           border: "1px solid rgba(105, 219, 124, 0.5)"
         }}>
@@ -380,13 +389,13 @@ const WastageGraph = () => {
         </div>
       </div>
 
-      <div style={{ 
+      <div style={{
         marginBottom: "1.5rem",
         display: "flex",
         justifyContent: "center",
         alignItems: "center"
       }}>
-        <button 
+        <button
           onClick={handlePrev}
           style={{
             background: "#2d3748",
@@ -402,7 +411,7 @@ const WastageGraph = () => {
         >
           &lt;
         </button>
-        <span style={{ 
+        <span style={{
           margin: "0 1rem",
           fontSize: "18px",
           fontWeight: "bold",
@@ -414,8 +423,8 @@ const WastageGraph = () => {
             mode === "day"
               ? "DD MMM, YYYY"
               : mode === "month"
-              ? "MMM YYYY"
-              : "YYYY"
+                ? "MMM YYYY"
+                : "YYYY"
           )}
         </span>
         <button
@@ -470,7 +479,7 @@ const WastageGraph = () => {
         >
           CLEAR GRAPH DATA
         </button>
-        
+
         <button
           style={{
             margin: "20px 8px 0",
@@ -505,10 +514,10 @@ const WastageGraph = () => {
           <div style={{ fontSize: "14px", color: "#aaa" }}>Any new food marked as wasted will appear here</div>
         </div>
       ) : (
-        <ReactECharts 
-          option={getChartOption()} 
-          style={{ 
-            height: "500px", 
+        <ReactECharts
+          option={getChartOption()}
+          style={{
+            height: "500px",
             width: "100%",
             borderRadius: "10px",
           }}
@@ -527,7 +536,7 @@ const WastageGraph = () => {
         <Link to="/home" className="btn go-btn">
           Add New Food Item
         </Link>
-        
+
         <Link to="/inventory" className="btn go-btn">
           View Food Inventory
         </Link>
