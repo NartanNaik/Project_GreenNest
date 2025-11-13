@@ -20,7 +20,8 @@ const FarmerNavBar = ({ logout }) => {
   return (
     <nav className="navbar bg-white shadow-md sticky top-0 z-50">
       <div className="navbar-container flex items-center justify-between px-6 py-3">
-        {/* ✅ Logo Section */}
+        
+        {/* Logo */}
         <div className="flex items-center gap-2">
           <FaLeaf className="text-green-600 text-2xl" />
           <Link
@@ -31,14 +32,14 @@ const FarmerNavBar = ({ logout }) => {
           </Link>
         </div>
 
-        {/* ✅ Menu Section */}
+        {/* Menu */}
         <div className="navbar-menu flex items-center gap-5">
           <Link to="/farmer/dashboard" className={getActiveClass("/farmer/dashboard")}>
             <FaHome className="navbar-icon" />
             <span className="navbar-text">Dashboard</span>
           </Link>
 
-          <Link to="/farmer/farm-info" className={getActiveClass("/farmer/farm-info")}>
+          <Link to="/farmer-setup" className={getActiveClass("/farmer-setup")}>
             <FaSeedling className="navbar-icon" />
             <span className="navbar-text">My Farm</span>
           </Link>
@@ -53,13 +54,14 @@ const FarmerNavBar = ({ logout }) => {
             <span className="navbar-text">Messages</span>
           </Link>
 
-          <Link to="/farmer/profile" className={getActiveClass("/farmer/profile")}>
+          {/* 🔥 FIXED PROFILE ROUTE */}
+          <Link to="/farmer-profile" className={getActiveClass("/farmer-profile")}>
             <FaUser className="navbar-icon" />
             <span className="navbar-text">Profile</span>
           </Link>
         </div>
 
-        {/* ✅ Logout Section */}
+        {/* Logout */}
         <div className="flex items-center">
           <button
             onClick={logout}
@@ -69,6 +71,7 @@ const FarmerNavBar = ({ logout }) => {
             <span>Logout</span>
           </button>
         </div>
+
       </div>
     </nav>
   );

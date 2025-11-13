@@ -1,0 +1,100 @@
+/* Main container for the donation page */
+.donate-container {
+  width: 90%;
+  max-width: 1200px; /* Max width for large screens */
+  margin: 2rem auto; /* Center the container with space */
+  padding: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Page title */
+.donate-container h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+/* This is the most important part: The grid for the cards */
+.farmer-list {
+  display: grid;
+  /* Create responsive columns */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; /* Space between the cards */
+}
+
+/* Individual farmer card styling */
+.farmer-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.farmer-card:hover {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Card content */
+.farmer-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #222;
+}
+
+.farmer-card p {
+  margin: 0.5rem 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* Button container */
+.button-group {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem; /* Space between buttons */
+}
+
+/* General button styling */
+.btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+/* Specific button colors */
+.donate-btn {
+  background-color: #4caf50; /* Green */
+  color: white;
+}
+.donate-btn:hover {
+  background-color: #45a049;
+}
+
+.message-btn {
+  background-color: #008cba; /* Blue */
+  color: white;
+}
+.message-btn:hover {
+  background-color: #007b9a;
+}
+
+/* Styles for Loading/Error/Empty messages */
+.status-message {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #777;
+  padding: 3rem;
+  /* Spans all columns in a grid if it's the only item */
+  grid-column: 1 / -1; 
+}
+
+.status-message.error {
+  color: #d9534f; /* Red */
+  font-weight: bold;
+}

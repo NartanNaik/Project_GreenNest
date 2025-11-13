@@ -46,29 +46,29 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+// router.post("/login", async (req, res) => {
+//   const { email, password } = req.body;
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(400).json({ message: "Invalid email or password" });
+//     }
 
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+//     const isPasswordValid = await user.comparePassword(password);
+//     if (!isPasswordValid) {
+//       return res.status(400).json({ message: "Invalid email or password" });
+//     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+//     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+//       expiresIn: "1h",
+//     });
 
-    res.status(200).json({ message: "Login successful", token });
-  } catch (err) {
-    res.status(500).json({ message: "Error logging in", error: err.message });
-  }
-});
+//     res.status(200).json({ message: "Login successful", token });
+//   } catch (err) {
+//     res.status(500).json({ message: "Error logging in", error: err.message });
+//   }
+// });
 
 // Request OTP
 router.post("/request-otp", async (req, res) => {

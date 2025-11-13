@@ -40,11 +40,6 @@ const LoginPage = () => {
     }
   };
 
-  // ✅ Google Login via backend redirect
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:5000/auth/google";
-  };
-
   // ✅ Request OTP for password reset
   const handleRequestOtp = async (e) => {
     e.preventDefault();
@@ -90,21 +85,15 @@ const LoginPage = () => {
     }
   };
 
-  // ✅ Capture Google OAuth token after redirect
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const token = queryParams.get("token");
-    if (token) {
-      console.log("🔑 Google OAuth token detected");
-      loginWithGoogle(token);
-      navigate("/home");
-    }
-  }, [location.search, loginWithGoogle, navigate]);
 
   // ✅ Redirect if already logged in
+  // ✅ WORKING
   useEffect(() => {
-    if (user) navigate("/home");
+    if (user) {
+      navigate("/home");
+    }
   }, [user, navigate]);
+
 
   return (
     <div className="login-container">

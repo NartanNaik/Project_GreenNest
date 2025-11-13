@@ -1,0 +1,132 @@
+/* Page container */
+.farmer-home-container {
+  width: 90%;
+  max-width: 1300px;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Section title */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+}
+
+/* Grid layout for user cards */
+.user-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* User card styling */
+.user-card {
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.user-card:hover {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Card text */
+.user-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.75rem;
+  color: #222;
+}
+
+.user-card p {
+  margin: 0.4rem 0;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+/* Button container */
+.user-card-buttons {
+  margin-top: 1.2rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Buttons */
+.user-btn {
+  padding: 0.7rem 1rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s ease;
+}
+
+/* Interest button */
+.interest-btn {
+  background-color: #4caf50;
+  color: white;
+}
+.interest-btn:hover {
+  background-color: #449d48;
+}
+
+/* Remove interest */
+.not-interested-btn {
+  background-color: #e53935;
+  color: white;
+}
+.not-interested-btn:hover {
+  background-color: #c62828;
+}
+
+/* Message button */
+.message-btn {
+  background-color: #007bff;
+  color: white;
+}
+.message-btn:hover {
+  background-color: #0068d1;
+}
+
+/* Empty message text */
+.empty-text {
+  color: #777;
+  font-size: 1rem;
+  padding: 1rem 0;
+}
+
+/* Section Wrapper Card */
+.section-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 2rem;
+}
+
+/* Section title inside the card */
+.section-card .section-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+}
+
+/* Empty message box */
+.empty-box {
+  background: #fafafa;
+  border: 1px dashed #bdbdbd;
+  color: #666;
+  padding: 1.2rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1rem;
+  margin-top: 1rem;
+}

@@ -3,7 +3,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import session from "express-session";
 import cron from "node-cron";
 import fetch from "node-fetch";
@@ -118,42 +118,6 @@ app.post("/auth/register", upload.single("farmerDocs"), async (req, res) => {
   }
 });
 
-// ✅ Manual Login Route (ADDED BACK)
-app.post("/auth/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password)
-      return res.status(400).json({ message: "Email and password are required" });
-
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
-
-    // 🔐 Compare hashed password
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch)
-      return res.status(401).json({ message: "Invalid password" });
-
-    // 🧾 Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || "secretkey",
-      { expiresIn: "7d" }
-    );
-
-    res.json({
-      message: "✅ Login successful",
-      token,
-      role: user.role,
-      email: user.email,
-    });
-  } catch (err) {
-    console.error("❌ Login error:", err);
-    res.status(500).json({ message: "Server error during login" });
-  }
-});
-
 // ✅ Google Login (ADDED BACK)
 app.post("/auth/google", async (req, res) => {
   try {
@@ -257,21 +221,44 @@ app.post("/auth/reset-password", async (req, res) => {
 // ================= NEW CHAT LOGIC (YOURS IS GOOD) =================
 
 // ✅ Get chat history between two specific users
-app.get("/messages/:userId1/:userId2", async (req, res) => {
+// Get chat between customer and farmer
+app.get("/messages/:customerId/:farmerId", async (req, res) => {
   try {
-    const { userId1, userId2 } = req.params;
+    const { customerId, farmerId } = req.params;
+
     const messages = await Message.find({
       $or: [
-        { senderId: userId1, recipientId: userId2 },
-        { senderId: userId2, recipientId: userId1 },
-      ],
+        { senderId: customerId, recipientId: farmerId },
+        { senderId: farmerId, recipientId: customerId }
+      ]
     }).sort({ timestamp: 1 });
+
     res.json(messages);
   } catch (err) {
-    console.error("❌ Error fetching chat history:", err);
-    res.status(500).json({ message: "Server error fetching messages" });
+    console.error("❌ Error fetching chat:", err);
+    res.status(500).json({ message: "Server error fetching chat" });
   }
 });
+
+// Clear entire chat between a customer & farmer
+app.delete("/messages/clear/:customerId/:farmerId", async (req, res) => {
+  try {
+    const { customerId, farmerId } = req.params;
+
+    await Message.deleteMany({
+      $or: [
+        { senderId: customerId, recipientId: farmerId },
+        { senderId: farmerId, recipientId: customerId }
+      ]
+    });
+
+    res.json({ message: "Chat cleared successfully" });
+  } catch (err) {
+    console.error("❌ Error clearing chat:", err);
+    res.status(500).json({ message: "Failed to clear chat" });
+  }
+});
+
 
 // ✅ Get all conversations for a specific user (for FarmerChatList)
 app.get("/messages/conversations/:userId", async (req, res) => {
@@ -445,11 +432,43 @@ cron.schedule("0 8 * * *", async () => {
 // ================= SOCKET.IO INTEGRATION (UPDATED) =================
 const server = http.createServer(app);
 
+// ========== SOCKET.IO FIXED SINGLE INSTANCE ==========
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
     methods: ["GET", "POST"],
+    credentials: true,
   },
+  transports: ["websocket", "polling"],
+});
+
+io.on("connection", (socket) => {
+  console.log("🟢 Client connected:", socket.id);
+
+  socket.on("joinRoom", (userId) => {
+    socket.join(userId);
+    console.log(`📦 User ${socket.id} joined room: ${userId}`);
+  });
+
+  socket.on("sendMessage", async (msg) => {
+    try {
+      const savedMsg = await new Message({
+        text: msg.text,
+        senderId: msg.senderId,
+        recipientId: msg.recipientId,
+        timestamp: msg.timestamp,
+      }).save();
+
+      io.to(msg.recipientId).emit("receiveMessage", savedMsg);
+      io.to(msg.senderId).emit("receiveMessage", savedMsg);
+    } catch (err) {
+      console.error("❌ Error saving message:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
 });
 
 // ✅ Fetch farmer profile
@@ -502,6 +521,100 @@ app.get("/auth/me", async (req, res) => {
   }
 });
 
+app.post("/auth/login", async (req, res) => {
+  try {
+    console.log("LOGIN REQUEST BODY:", req.body);
+
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    console.log("LOGIN USER FOUND:", user);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    console.log("PASSWORD IN DB:", user.passwordHash);
+    console.log("PASSWORD ENTERED:", password);
+
+    // ⭐ FIXED ⭐
+    const match = await user.comparePassword(password);
+
+    console.log("PASSWORD MATCH:", match);
+
+    if (!match)
+      return res.status(401).json({ message: "Invalid password" });
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || "secretkey",
+      { expiresIn: "7d" }
+    );
+
+    console.log("LOGIN SUCCESS:", token);
+
+    res.json({ token, role: user.role, email: user.email });
+
+  } catch (err) {
+    console.log("LOGIN ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// =======================================
+// POST MESSAGE (GENERAL) → /messages
+// =======================================
+app.post("/messages", async (req, res) => {
+  try {
+    const { senderId, recipientId, text } = req.body;
+
+    if (!senderId || !recipientId || !text) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    const msg = await new Message({
+      senderId,
+      recipientId,
+      text,
+    }).save();
+
+    // Emit socket event
+    io.to(String(senderId)).emit("receiveMessage", msg);
+    io.to(String(recipientId)).emit("receiveMessage", msg);
+
+    res.json(msg);
+  } catch (err) {
+    console.error("❌ POST /messages error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =======================================
+// POST MESSAGE (FARMER CHATBOX) → /api/messages
+// =======================================
+app.post("/api/messages", async (req, res) => {
+  try {
+    const { senderId, receiverId, text } = req.body;
+
+    if (!senderId || !receiverId || !text) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    const msg = await new Message({
+      senderId,
+      recipientId: receiverId,
+      text,
+    }).save();
+
+    io.to(String(senderId)).emit("receiveMessage", msg);
+    io.to(String(receiverId)).emit("receiveMessage", msg);
+
+    res.json(msg);
+  } catch (err) {
+    console.error("❌ POST /api/messages error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
@@ -513,20 +626,27 @@ io.on("connection", (socket) => {
   });
 
   // ✅ Handle new message
-  socket.on("sendMessage", async (msg) => {
-    try {
-      // 1. Save message in DB
-      const savedMsg = await new Message(msg).save();
+socket.on("sendMessage", async (msg) => {
+  try {
+    const savedMsg = await new Message({
+      text: msg.text,
+      senderId: msg.senderId,
+      recipientId: msg.recipientId,
+      timestamp: msg.timestamp
+    }).save();
 
-      // 2. Emit the message to the RECIPIENT'S room
-      // This sends it to the recipient's "ChatPage" if they are online
-      io.to(msg.recipientId).emit("receiveMessage", savedMsg);
+    // Send to receiver
+    io.to(msg.recipientId).emit("receiveMessage", savedMsg);
 
-      console.log("💬 Message sent & broadcast:", savedMsg);
-    } catch (err)      {
-      console.error("❌ Error saving/sending message:", err);
-    }
-  });
+    // Send to sender so THEIR UI updates instantly
+    io.to(msg.senderId).emit("receiveMessage", savedMsg);
+
+    console.log("💬 Message sent to:", msg.senderId, "→", msg.recipientId);
+  } catch (err) {
+    console.error("❌ Error saving/sending message:", err);
+  }
+});
+
 
   socket.on("disconnect", () => {
     console.log("🔴 Client disconnected:", socket.id);

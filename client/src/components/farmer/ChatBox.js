@@ -1,33 +1,29 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { io } from "socket.io-client";
-
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
+import socket from "../socket";
 
 function ChatBox({ user, onClose }) {
-  const farmerId = localStorage.getItem("userId"); // ✅ current logged-in farmer
+  const farmerId = localStorage.getItem("userId");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
-  // ✅ Fetch existing chat when opened
+  // Load existing chat
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/messages/${farmerId}/${user._id}`);
-        setMessages(res.data);
-      } catch (err) {
-        console.error("❌ Error fetching chat:", err);
-      }
+    const load = async () => {
+      const res = await axios.get(
+        `http://localhost:5000/messages/${farmerId}/${user._id}`
+      );
+      setMessages(res.data);
     };
-    fetchMessages();
-  }, [farmerId, user]);
+    load();
 
-  // ✅ Listen for new incoming messages
-  useEffect(() => {
+    socket.emit("joinRoom", farmerId);
+
+    socket.off("receiveMessage");
     socket.on("receiveMessage", (msg) => {
       if (
-        (msg.senderId === user._id && msg.receiverId === farmerId) ||
-        (msg.senderId === farmerId && msg.receiverId === user._id)
+        (msg.senderId === farmerId && msg.recipientId === user._id) ||
+        (msg.senderId === user._id && msg.recipientId === farmerId)
       ) {
         setMessages((prev) => [...prev, msg]);
       }
@@ -36,29 +32,27 @@ function ChatBox({ user, onClose }) {
     return () => socket.off("receiveMessage");
   }, [user, farmerId]);
 
-  // ✅ Send new message
+  // SEND MESSAGE
   const handleSend = async () => {
     if (!message.trim()) return;
-    try {
-      const msg = {
-        senderId: farmerId,
-        receiverId: user._id,
-        text: message,
-      };
 
-      await axios.post("http://localhost:5000/api/messages", msg);
-      setMessages((prev) => [...prev, msg]);
-      setMessage("");
-    } catch (err) {
-      console.error("❌ Error sending message:", err);
-    }
+    const payload = {
+      senderId: farmerId,
+      receiverId: user._id,
+      text: message,
+    };
+
+    setMessage("");
+
+    await axios.post("http://localhost:5000/api/messages", payload);
+    // No local push — socket will update UI
   };
 
   return (
     <div className="fixed bottom-4 right-4 w-80 bg-white shadow-lg rounded-xl border">
       <div className="flex justify-between items-center bg-green-600 text-white p-3 rounded-t-xl">
-        <h3 className="font-semibold">{user.firstName} {user.lastName}</h3>
-        <button onClick={onClose} className="text-white">✖</button>
+        <h3>{user.firstName + " " + user.lastName}</h3>
+        <button onClick={onClose}>✖</button>
       </div>
 
       <div className="p-3 h-64 overflow-y-auto bg-gray-50">
@@ -85,7 +79,7 @@ function ChatBox({ user, onClose }) {
         />
         <button
           onClick={handleSend}
-          className="bg-green-600 text-white px-3 ml-2 rounded-md hover:bg-green-700 transition"
+          className="bg-green-600 text-white px-3 ml-2 rounded-md"
         >
           ➤
         </button>
