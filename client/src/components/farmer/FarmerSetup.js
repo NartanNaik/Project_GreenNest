@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  FaUser,
+  FaSeedling,
+  FaLeaf,
+  FaClipboardList,
+  FaGlobeAsia,
+  FaEdit,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
+
+import "./FarmerSetup.css";
 
 function FarmerSetup() {
   const [formData, setFormData] = useState({
@@ -18,7 +29,6 @@ function FarmerSetup() {
 
   const isEditMode = location.search.includes("edit=true");
 
-  // ✅ Fetch saved data if editing profile
   useEffect(() => {
     const fetchProfile = async () => {
       if (!isEditMode) return;
@@ -33,20 +43,16 @@ function FarmerSetup() {
 
         setFormData(res.data);
       } catch (err) {
-        console.error("❌ Failed to load existing profile:", err);
+        console.error("❌ Failed to load profile:", err);
       }
     };
 
     fetchProfile();
   }, [isEditMode]);
 
-  // Handle form fields
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // Save or update profile
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -58,7 +64,7 @@ function FarmerSetup() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert("✅ Profile saved successfully!");
+      alert("Profile saved successfully!");
       navigate("/farmer-profile");
     } catch (err) {
       console.error("❌ Error saving profile:", err);
@@ -67,85 +73,82 @@ function FarmerSetup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-green-50 p-6">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-lg"
-      >
-        <h2 className="text-2xl font-bold text-green-700 mb-6 text-center">
-          {isEditMode ? "✏️ Edit Farmer Profile" : "👨‍🌾 Farmer Profile Setup"}
-        </h2>
+    <div className="setup-wrapper">
+      <form className="setup-card" onSubmit={handleSubmit}>
+        
+        <div className="setup-header">
+          <FaLeaf className="setup-header-icon" />
+          <h2>
+            {isEditMode ? "Edit Farmer Profile" : "Farmer Profile Setup"}
+          </h2>
+        </div>
 
-        {/* Full Name */}
-        <label className="block mb-3">
-          <span className="text-gray-700">Full Name</span>
-          <input
-            type="text"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded mt-1"
-            placeholder="Enter your full name"
-          />
-        </label>
+        <div className="setup-grid">
 
-        {/* Farming Type */}
-        <label className="block mb-3">
-          <span className="text-gray-700">Farming Type</span>
-          <select
-            name="farmingType"
-            value={formData.farmingType}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded mt-1"
-          >
-            <option value="">Select type</option>
-            <option value="Vegetable Farming">Vegetable Farming</option>
-            <option value="Fruit Farming">Fruit Farming</option>
-            <option value="Mixed Farming">Mixed Farming</option>
-            <option value="Dairy Farming">Dairy Farming</option>
-            <option value="Organic Farming">Organic Farming</option>
-          </select>
-        </label>
+          {/* Full Name */}
+          <div className="setup-field">
+            <label><FaUser className="field-icon" /> Full Name</label>
+            <input
+              type="text"
+              name="fullName"
+              placeholder="Enter your full name"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-        {/* Crops */}
-        <label className="block mb-3">
-          <span className="text-gray-700">Crops You Grow</span>
-          <input
-            type="text"
-            name="crops"
-            value={formData.crops}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded mt-1"
-            placeholder="e.g., Tomato, Onion, Rice"
-          />
-        </label>
+          {/* Farming Type */}
+          <div className="setup-field">
+            <label><FaSeedling className="field-icon" /> Farming Type</label>
+            <select
+              name="farmingType"
+              value={formData.farmingType}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Type</option>
+              <option value="Vegetable Farming">Vegetable Farming</option>
+              <option value="Fruit Farming">Fruit Farming</option>
+              <option value="Mixed Farming">Mixed Farming</option>
+              <option value="Dairy Farming">Dairy Farming</option>
+              <option value="Organic Farming">Organic Farming</option>
+            </select>
+          </div>
 
-        {/* Farm Size */}
-        <label className="block mb-3">
-          <span className="text-gray-700">Farm Size (acres)</span>
-          <input
-            type="number"
-            name="farmSize"
-            value={formData.farmSize}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded mt-1"
-          />
-        </label>
+          {/* Crops */}
+          <div className="setup-field">
+            <label><FaClipboardList className="field-icon" /> Crops</label>
+            <input
+              type="text"
+              name="crops"
+              placeholder="e.g. Tomato, Onion, Rice"
+              value={formData.crops}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-        {/* Location */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <label>
-            <span className="text-gray-700">State</span>
+          {/* Farm Size */}
+          <div className="setup-field">
+            <label><FaLeaf className="field-icon" /> Farm Size (acres)</label>
+            <input
+              type="number"
+              name="farmSize"
+              value={formData.farmSize}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* State */}
+          <div className="setup-field">
+            <label><FaMapMarkerAlt className="field-icon" /> State</label>
             <select
               name="state"
               value={formData.state}
               onChange={handleChange}
               required
-              className="w-full border p-2 rounded mt-1"
             >
               <option value="">Select State</option>
               <option value="Karnataka">Karnataka</option>
@@ -153,27 +156,28 @@ function FarmerSetup() {
               <option value="Kerala">Kerala</option>
               <option value="Tamil Nadu">Tamil Nadu</option>
             </select>
-          </label>
+          </div>
 
-          <label>
-            <span className="text-gray-700">District</span>
+          {/* District */}
+          <div className="setup-field">
+            <label><FaMapMarkerAlt className="field-icon" /> District</label>
             <input
               type="text"
               name="district"
+              placeholder="Enter district"
               value={formData.district}
               onChange={handleChange}
               required
-              className="w-full border p-2 rounded mt-1"
             />
-          </label>
+          </div>
+
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
-        >
-          {isEditMode ? "Save Changes" : "Save Profile"}
+        <button type="submit" className="setup-submit-button">
+          {isEditMode ? <FaEdit /> : "Save Profile"}  
+          {isEditMode ? " Save Changes" : ""}
         </button>
+
       </form>
     </div>
   );

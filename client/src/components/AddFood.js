@@ -1,35 +1,40 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./AddFood.css";
 
 function AddFood() {
   const [image, setImage] = useState(null);
   const [foodData, setFoodData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef(null); // 👈 Reference to file input
+  const [customShelfLife, setCustomShelfLife] = useState("");   // ⭐ NEW
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Preview image
     setImage(URL.createObjectURL(file));
 
-    // Prepare FormData for backend
     const formData = new FormData();
     formData.append("image", file);
 
     try {
       setLoading(true);
+      setFoodData(null);
+
       const res = await axios.post("http://localhost:5000/ai/analyze", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       setFoodData(res.data.data);
+
+      // ⭐ Auto-fill detected shelf life into input
+      setCustomShelfLife(res.data.data.shelfLife || "");
     } catch (err) {
       console.error("❌ Error scanning image:", err);
-      alert("Failed to analyze image. Please try again.");
+      alert("Failed to analyze image. Try again.");
     } finally {
       setLoading(false);
     }
@@ -40,20 +45,14 @@ function AddFood() {
       const token = localStorage.getItem("token");
       if (!token) return alert("Please log in first.");
 
-      if (!foodData) {
-        return alert("No food data to save. Please scan an image first.");
-      }
-
       const today = new Date();
 
       const payload = {
         name: foodData.name || "Unknown Food",
         category: foodData.category || "Misc",
-        shelfLife: foodData.shelfLife || 3,
+        shelfLife: Number(customShelfLife) || foodData.shelfLife || 3,  // ⭐ Use custom input
         mDate: today.toISOString(),
       };
-
-      console.log("📦 Sending payload to backend:", payload);
 
       await axios.post("http://localhost:5000/food/add", payload, {
         headers: {
@@ -62,81 +61,88 @@ function AddFood() {
         },
       });
 
-      alert("✅ Food added successfully!");
+      alert("✅ Food added to inventory!");
       navigate("/inventory");
     } catch (err) {
       console.error("❌ Error saving food:", err);
-      alert("Error saving food: " + (err.response?.data?.message || err.message));
+      alert("Error saving food.");
     }
   };
 
-  // 🧹 Cancel / Reset function
   const handleCancel = () => {
-    if (window.confirm("Are you sure you want to remove this item?")) {
+    if (window.confirm("Remove this item?")) {
       setImage(null);
       setFoodData(null);
-      setLoading(false);
-
-      // 👇 Reset file input value so the same file can be reselected
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      setCustomShelfLife("");  // reset
+      fileInputRef.current.value = "";
     }
   };
 
   return (
-    <div className="add-food-container">
-      <h2>Smart Food Scanner 🤖</h2>
+    <div className="addfood-wrapper">
+      <h2 className="addfood-title">Smart Food Scanner 🤖</h2>
 
-      {/* Image upload box */}
+      {/* Upload Box */}
       <label className="upload-area">
         <input
-          ref={fileInputRef} // 👈 attach the ref
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           onChange={handleImageUpload}
           hidden
         />
+
         <div className="upload-box">
           {image ? (
-            <img
-              src={image}
-              alt="preview"
-              style={{
-                width: "200px",
-                borderRadius: "10px",
-                marginTop: "10px",
-              }}
-            />
+            <img src={image} alt="preview" className="preview-img" />
           ) : (
-            <p>📸 Click or upload an image of your food item</p>
+            <p className="upload-text">📸 Tap here to upload a food image</p>
           )}
         </div>
       </label>
 
-      {loading && <p>Analyzing image... please wait ⏳</p>}
+      {/* SCANNING ANIMATION */}
+      {loading && (
+        <div className="scan-loading">
+          <div className="scanner-bar"></div>
+          <p>Analyzing your food... 🍽️</p>
+        </div>
+      )}
 
-      {/* Display results */}
+      {/* Results Card */}
       {foodData && (
-        <div className="food-info-card">
-          <h3>{foodData.name || "Unknown Food"}</h3>
-          <p>🥫 Category: {foodData.category || "N/A"}</p>
-          <p>🧊 Best Stored: {foodData.storage || "Unknown"}</p>
-          <p>⌛ Shelf Life: {foodData.shelfLife || "?"} days</p>
+        <div className="result-card fade-in">
+          <h3 className="result-title">{foodData.name}</h3>
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button className="btn add-btn" onClick={handleSave}>
+          <div className="result-info">
+            <p>🥫 Category: {foodData.category}</p>
+            <p>🧊 Storage: {foodData.storage}</p>
+
+            {/* ⭐ Editable Shelf Life Input */}
+            <p>
+              ⌛ Shelf Life:{" "}
+              <input
+                type="number"
+                value={customShelfLife}
+                onChange={(e) => setCustomShelfLife(e.target.value)}
+                style={{
+                  width: "80px",
+                  padding: "6px",
+                  borderRadius: "6px",
+                  border: "1px solid #2196f3",
+                  marginLeft: "8px",
+                }}
+              />{" "}
+              days
+            </p>
+          </div>
+
+          <div className="result-buttons">
+            <button className="btn save-btn" onClick={handleSave}>
               Save to Inventory
             </button>
-            <button
-              className="btn cancel-btn"
-              style={{
-                backgroundColor: "#f44336",
-                color: "white",
-                border: "none",
-              }}
-              onClick={handleCancel}
-            >
+
+            <button className="btn cancel-btn" onClick={handleCancel}>
               Cancel
             </button>
           </div>

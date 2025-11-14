@@ -218,48 +218,6 @@ app.post("/auth/reset-password", async (req, res) => {
   res.json({ message: "Password reset successful" });
 });
 
-// ================= NEW CHAT LOGIC (YOURS IS GOOD) =================
-
-// ✅ Get chat history between two specific users
-// Get chat between customer and farmer
-app.get("/messages/:customerId/:farmerId", async (req, res) => {
-  try {
-    const { customerId, farmerId } = req.params;
-
-    const messages = await Message.find({
-      $or: [
-        { senderId: customerId, recipientId: farmerId },
-        { senderId: farmerId, recipientId: customerId }
-      ]
-    }).sort({ timestamp: 1 });
-
-    res.json(messages);
-  } catch (err) {
-    console.error("❌ Error fetching chat:", err);
-    res.status(500).json({ message: "Server error fetching chat" });
-  }
-});
-
-// Clear entire chat between a customer & farmer
-app.delete("/messages/clear/:customerId/:farmerId", async (req, res) => {
-  try {
-    const { customerId, farmerId } = req.params;
-
-    await Message.deleteMany({
-      $or: [
-        { senderId: customerId, recipientId: farmerId },
-        { senderId: farmerId, recipientId: customerId }
-      ]
-    });
-
-    res.json({ message: "Chat cleared successfully" });
-  } catch (err) {
-    console.error("❌ Error clearing chat:", err);
-    res.status(500).json({ message: "Failed to clear chat" });
-  }
-});
-
-
 // ✅ Get all conversations for a specific user (for FarmerChatList)
 app.get("/messages/conversations/:userId", async (req, res) => {
   try {
@@ -291,6 +249,59 @@ app.get("/messages/conversations/:userId", async (req, res) => {
     res.status(500).json({ message: "Server error fetching conversations" });
   }
 });
+
+// ================= NEW CHAT LOGIC (YOURS IS GOOD) =================
+
+// ✅ Get chat history between two specific users
+// Get chat between customer and farmer
+app.get("/messages/:customerId/:farmerId", async (req, res) => {
+  try {
+    const { customerId, farmerId } = req.params;
+
+    // ✅ Backend protection: Stop invalid ObjectIds
+    if (
+      !mongoose.Types.ObjectId.isValid(customerId) ||
+      !mongoose.Types.ObjectId.isValid(farmerId)
+    ) {
+      return res.status(400).json({ message: "Invalid IDs" });
+    }
+
+    const messages = await Message.find({
+      $or: [
+        { senderId: customerId, recipientId: farmerId },
+        { senderId: farmerId, recipientId: customerId }
+      ]
+    }).sort({ timestamp: 1 });
+
+    res.json(messages);
+  } catch (err) {
+    console.error("❌ Error fetching chat:", err);
+    res.status(500).json({ message: "Server error fetching chat" });
+  }
+});
+
+
+// Clear entire chat between a customer & farmer
+app.delete("/messages/clear/:customerId/:farmerId", async (req, res) => {
+  try {
+    const { customerId, farmerId } = req.params;
+
+    await Message.deleteMany({
+      $or: [
+        { senderId: customerId, recipientId: farmerId },
+        { senderId: farmerId, recipientId: customerId }
+      ]
+    });
+
+    res.json({ message: "Chat cleared successfully" });
+  } catch (err) {
+    console.error("❌ Error clearing chat:", err);
+    res.status(500).json({ message: "Failed to clear chat" });
+  }
+});
+
+
+
 
 // ✅ Get basic info for a user (for ChatPage header)
 app.get("/user/info/:userId", async (req, res) => {

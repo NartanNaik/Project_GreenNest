@@ -243,3 +243,31 @@
 .send-button:hover {
   background-color: #0b7a66;
 }
+
+.donation-request-box {
+  background: #fff3cd;
+  padding: 12px;
+  border-radius: 10px;
+  margin: 10px 0;
+  border-left: 5px solid #ffca2c;
+  font-size: 14px;
+}
+
+.donation-buttons button {
+  margin-right: 10px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.donation-buttons button:first-child {
+  background: #28a745;
+  color: white;
+}
+
+.donation-buttons button:last-child {
+  background: #dc3545;
+  color: white;
+}

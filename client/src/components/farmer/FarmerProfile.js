@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import {
+  FaSeedling,
+  FaUser,
+  FaMapMarkedAlt,
+  FaTractor,
+  FaClipboardList,
+  FaEdit,
+} from "react-icons/fa";
+
+import "./FarmerProfile.css";
 
 function FarmerProfile() {
   const [profile, setProfile] = useState(null);
@@ -12,6 +22,7 @@ function FarmerProfile() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
+
         if (!token) {
           setError("Please login to view profile.");
           setLoading(false);
@@ -34,32 +45,69 @@ function FarmerProfile() {
     fetchProfile();
   }, []);
 
-  if (loading) return <p className="text-center mt-6">Loading profile...</p>;
-  if (error) return <p className="text-center mt-6 text-red-500">{error}</p>;
+  if (loading) return <p className="loading-text">Loading profile...</p>;
+  if (error) return <p className="error-text">{error}</p>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-green-50 p-6">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-xl">
-        <h2 className="text-3xl font-bold text-green-700 mb-6 text-center">
-          👨‍🌾 Farmer Profile
-        </h2>
-
-        <div className="space-y-4 text-lg">
-          <p><strong>Full Name:</strong> {profile.fullName}</p>
-          <p><strong>Farming Type:</strong> {profile.farmingType}</p>
-          <p><strong>Crops:</strong> {profile.crops}</p>
-          <p><strong>Farm Size:</strong> {profile.farmSize} acres</p>
-          <p><strong>Country:</strong> {profile.country}</p>
-          <p><strong>State:</strong> {profile.state}</p>
-          <p><strong>District:</strong> {profile.district}</p>
+    <div className="profile-wrapper">
+      <div className="profile-card">
+        <div className="profile-header">
+          <FaSeedling className="header-icon" />
+          <h2>Farmer Profile</h2>
         </div>
 
-        {/* ✅ EDIT PROFILE BUTTON */}
+        <div className="profile-grid">
+
+          <div className="profile-box">
+            <FaUser className="box-icon" />
+            <h4>Full Name</h4>
+            <p>{profile.fullName}</p>
+          </div>
+
+          <div className="profile-box">
+            <FaTractor className="box-icon" />
+            <h4>Farming Type</h4>
+            <p>{profile.farmingType}</p>
+          </div>
+
+          <div className="profile-box">
+            <FaClipboardList className="box-icon" />
+            <h4>Crops</h4>
+            <p>{profile.crops}</p>
+          </div>
+
+          <div className="profile-box">
+            <FaSeedling className="box-icon" />
+            <h4>Farm Size</h4>
+            <p>{profile.farmSize} acres</p>
+          </div>
+
+          <div className="profile-box">
+            <FaMapMarkedAlt className="box-icon" />
+            <h4>Country</h4>
+            <p>{profile.country}</p>
+          </div>
+
+          <div className="profile-box">
+            <FaMapMarkedAlt className="box-icon" />
+            <h4>State</h4>
+            <p>{profile.state}</p>
+          </div>
+
+          <div className="profile-box">
+            <FaMapMarkedAlt className="box-icon" />
+            <h4>District</h4>
+            <p>{profile.district}</p>
+          </div>
+
+        </div>
+
+        {/* EDIT BUTTON */}
         <button
           onClick={() => navigate("/farmer-setup?edit=true")}
-          className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          className="edit-button"
         >
-          ✏️ Edit Profile
+          <FaEdit /> Edit Profile
         </button>
       </div>
     </div>

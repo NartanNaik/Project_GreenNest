@@ -1,0 +1,130 @@
+/* Background Layout */
+.profile-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #e8f5e9, #dcedc8);
+}
+
+/* Card Styling */
+.profile-card {
+  background: white;
+  width: 100%;
+  max-width: 850px;
+  border-radius: 22px;
+  padding: 35px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  animation: fadeUp 0.7s ease;
+}
+
+/* Header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 30px;
+}
+
+.profile-header h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1b5e20;
+}
+
+.header-icon {
+  font-size: 40px;
+  color: #4caf50;
+}
+
+/* Info Grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+/* Individual Info Boxes */
+.profile-box {
+  background: #f9fff8;
+  border: 1px solid #ccf3d5;
+  border-radius: 15px;
+  padding: 18px 20px;
+  text-align: left;
+  transition: 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+}
+
+.box-icon {
+  font-size: 28px;
+  color: #43a047;
+  margin-bottom: 10px;
+}
+
+.profile-box h4 {
+  font-size: 18px;
+  margin-bottom: 4px;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+.profile-box p {
+  font-size: 16px;
+  color: #444;
+}
+
+/* Edit Button */
+.edit-button {
+  margin-top: 30px;
+  width: 100%;
+  background: #1b5e20;
+  color: white;
+  padding: 14px;
+  font-size: 18px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  transition: 0.3s;
+}
+
+.edit-button:hover {
+  background: #388e3c;
+}
+
+/* Loading & Error Messages */
+.loading-text,
+.error-text {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 18px;
+}
+
+.error-text {
+  color: red;
+}
+
+/* Fade Animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

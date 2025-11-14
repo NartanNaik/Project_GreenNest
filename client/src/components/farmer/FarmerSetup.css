@@ -1,0 +1,114 @@
+/* Background */
+.setup-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #e6f5e9, #d8f1d2);
+}
+
+/* Card */
+.setup-card {
+  background: white;
+  padding: 40px;
+  width: 100%;
+  max-width: 850px;
+  border-radius: 22px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+  animation: fadeIn 0.7s ease;
+}
+
+/* Header */
+.setup-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 30px;
+}
+
+.setup-header-icon {
+  font-size: 36px;
+  color: #43a047;
+}
+
+.setup-header h2 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #1b5e20;
+}
+
+/* Grid Layout */
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* Input Field Blocks */
+.setup-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.setup-field label {
+  font-weight: 600;
+  color: #2e7d32;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-icon {
+  font-size: 18px;
+  color: #43a047;
+}
+
+.setup-field input,
+.setup-field select {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #bde2c7;
+  background: #f8fff8;
+  font-size: 15px;
+  transition: 0.3s;
+}
+
+.setup-field input:focus,
+.setup-field select:focus {
+  border-color: #4caf50;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.25);
+}
+
+/* Submit Button */
+.setup-submit-button {
+  width: 100%;
+  margin-top: 30px;
+  background: #1b5e20;
+  color: white;
+  padding: 15px;
+  font-size: 18px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  transition: 0.3s;
+}
+
+.setup-submit-button:hover {
+  background: #388e3c;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(25px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

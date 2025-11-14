@@ -7,8 +7,9 @@ import {
   useLocation,
 } from "react-router-dom";
 import axios from "axios";
-import { jwtDecode } from 'jwt-decode'; // ✅ ADDED
-import FarmerChatList from './components/FarmerChatList'; // ✅ ADDED
+import { jwtDecode } from "jwt-decode";
+
+import FarmerChatList from "./components/farmer/FarmerChatList";
 import AddFood from "./components/AddFood";
 import FoodList from "./components/FoodList";
 import LoginPage from "./components/auth/LoginPage";
@@ -25,8 +26,11 @@ import ChatPage from "./components/ChatPage";
 import FarmerHome from "./components/farmer/FarmerHome";
 import FarmerSetup from "./components/farmer/FarmerSetup";
 import IdeaPage from "./components/farmer/IdeaPage";
+import FarmerProfile from "./components/farmer/FarmerProfile";
+import SelectFoodToDonate from "./components/SelectFoodToDonate";
+
 import "./App.css";
-import FarmerProfile from "./components/farmer/FarmerProfile"; // ✅ ADDED
+
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const navigate = useNavigate();
@@ -35,18 +39,18 @@ function App() {
 
   // === THEME SETUP ===
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") setIsDarkMode(true);
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") setIsDarkMode(true);
   }, []);
 
   useEffect(() => {
     const bg = isDarkMode ? "hsl(0, 0%, 10%)" : "hsl(0, 0%, 98%)";
-    const textColor = isDarkMode ? "#f0f0f0" : "#111";
+    const text = isDarkMode ? "#f0f0f0" : "#111";
 
     document.body.style.setProperty("--bg-color", bg);
-    document.body.style.setProperty("--text-color", textColor);
+    document.body.style.setProperty("--text-color", text);
     document.body.style.backgroundColor = bg;
-    document.body.style.color = textColor;
+    document.body.style.color = text;
 
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
 
@@ -56,30 +60,26 @@ function App() {
 
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
 
-  // === LAYOUT HIDING FOR CHAT PAGE ===
-  // This now correctly hides the layout for both the list and the chat page
+  // === HIDE NAVBAR FOR CHAT SCREEN ===
   const hideLayout = location.pathname.startsWith("/chat");
 
-  // === 🧭 AUTO LOCATION SAVE AFTER LOGIN (UPDATED) ===
+  // === AUTO SAVE LOCATION AFTER LOGIN ===
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    // ✅ Get userId from token, not localStorage
     if (isAuthenticated && token) {
       if (sessionStorage.getItem("locationUpdated") === "true") return;
 
-      let userIdFromToken;
+      let userId;
       try {
-        const decoded = jwtDecode(token); // Use jwt-decode
-        userIdFromToken = decoded.userId;
-      } catch (e) {
-        console.error("Invalid token for location save");
+        userId = jwtDecode(token).userId;
+      } catch {
         return;
       }
 
-      if (!userIdFromToken) return; // No user ID in token
+      if (!userId) return;
 
       sessionStorage.setItem("locationUpdated", "true");
+
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const coords = {
@@ -89,38 +89,35 @@ function App() {
 
           try {
             await axios.post("http://localhost:5000/api/save-location", {
-              userId: userIdFromToken, // ✅ Use the reliable ID
+              userId,
               coords,
             });
-            console.log("✅ Location auto-updated:", coords);
+            console.log("Location saved:", coords);
           } catch (err) {
-            console.error("❌ Failed to auto-save location:", err);
+            console.error("Location save failed:", err);
           }
         },
-        (err) => {
-          console.warn("⚠️ Location access denied or unavailable:", err.message);
-        },
+        () => { },
         { enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 }
       );
     }
   }, [isAuthenticated]);
 
-  // === DETERMINE USER ROLE ===
+  // === USER ROLE ===
   const userRole = user?.role || localStorage.getItem("userRole") || "user";
 
   return (
     <div className="App">
-      {/* 🧭 Navbar (hidden on chat page) */}
+      {/* NAVBAR (HIDDEN ON CHAT PAGE) */}
       {!hideLayout && (
         <>
-          {/* ✅ Dynamically render navbar */}
           {userRole === "farmer" ? (
             <FarmerNavBar logout={logout} />
           ) : (
             <NavBar />
           )}
 
-          {/* ✅ Theme Toggle */}
+          {/* Theme Toggle */}
           <div className="theme-toggle-container">
             <label className="switch">
               <input
@@ -135,40 +132,43 @@ function App() {
         </>
       )}
 
-      {/* 🌄 Background image (hidden on chat page) */}
+      {/* BG IMAGE */}
       {!hideLayout && (
-        <div
-          className="main-bg"
-          style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
-        />
+        <div className="main-bg" style={{ position: "absolute", inset: 0 }} />
       )}
 
       <div
-        className={`content-wrapper ${
-          hideLayout ? "h-screen w-full p-0" : "relative z-10"
-        }`}
+        className={`content-wrapper ${hideLayout ? "h-screen w-full p-0" : "relative z-10"
+          }`}
       >
-        {/* === ROUTES === */}
         <Routes>
-          {/* === LOGIN & REGISTER === */}
+          {/* LOGIN & REGISTER */}
           <Route
             path="/"
-            element={isAuthenticated ? <Navigate to="/home" /> : <LoginPage />}
+            element={
+              isAuthenticated
+                ? userRole === "farmer"
+                  ? <Navigate to="/farmer/dashboard" />
+                  : <Navigate to="/home" />
+                : <LoginPage />
+            }
           />
+
+          <Route path="/donate/select-food" element={<SelectFoodToDonate />} />
+
           <Route
             path="/register"
-            element={isAuthenticated ? <Navigate to="/home" /> : <RegisterPage />}
+            element={
+              isAuthenticated ? <Navigate to="/home" /> : <RegisterPage />
+            }
           />
           <Route path="/auth/google/callback" element={<OAuthHandler />} />
 
-          {/* === NORMAL USER ROUTES === */}
+          {/* NORMAL USER ROUTES */}
           <Route
             path="/home"
             element={isAuthenticated ? <AddFood /> : <Navigate to="/" />}
-          >
-            {/* ✅ FIXED: This is now a valid JSX comment */}
-            {/* Note: This route might need to check role and redirect farmer to /farmer/dashboard */}
-          </Route>
+          />
           <Route
             path="/inventory"
             element={isAuthenticated ? <FoodList /> : <Navigate to="/" />}
@@ -184,52 +184,60 @@ function App() {
           <Route
             path="/profile"
             element={isAuthenticated ? <ProfilePage /> : <Navigate to="/" />}
-          >
-            {/* ✅ FIXED: This is now a valid JSX comment */}
-            {/* Opening "/home" will redirect to "/farmer/dashboard" if role is farmer */}
-          </Route>
-
-          {/* === FARMER ROUTES === */}
-          <Route
-            path="/farmer/dashboard"
-            element={isAuthenticated ? <FarmerHome /> : <Navigate to="/" />}
           />
 
-          <Route path="/farmer-profile" element={isAuthenticated ? <FarmerProfile /> : <Navigate to="/" />} />
+          {/* FARMER ROUTES */}
+          <Route
+            path="/farmer/dashboard"
+            element={
+              isAuthenticated ? <FarmerHome /> : <Navigate to="/" />
+            }
+          />
+
+          <Route
+            path="/farmer-profile"
+            element={
+              isAuthenticated ? <FarmerProfile /> : <Navigate to="/" />
+            }
+          />
 
           <Route
             path="/farmer/ideas"
             element={isAuthenticated ? <IdeaPage /> : <Navigate to="/" />}
           />
 
-          {/* ✅ UPDATED CHAT ROUTES */}
-          <Route 
-            path="/chat/list" 
-            element={isAuthenticated ? <FarmerChatList /> : <Navigate to="/" />}
-          />
-          <Route 
-            path="/chat/:recipientId" 
-            element={isAuthenticated ? <ChatPage /> : <Navigate to="/" />} 
-          />
-
           <Route
-  path="/farmer-setup"
-  element={isAuthenticated ? <FarmerSetup /> : <Navigate to="/" />}
-/>
+            path="/farmer-setup"
+            element={
+              isAuthenticated ? <FarmerSetup /> : <Navigate to="/" />
+            }
+          />
 
+          {/* CHAT ROUTES */}
+          <Route path="/farmer/messages" element={<FarmerChatList />} />
 
-          {/* Catch-all redirect */}
+          {/* Chat window MUST have a recipientId */}
+          <Route path="/chat/:recipientId" element={<ChatPage />} />
+
+          {/* DEFAULT REDIRECT */}
           <Route
             path="*"
             element={
-              isAuthenticated ? <Navigate to="/home" /> : <Navigate to="/" />
+              isAuthenticated
+                ? userRole === "farmer"
+                  ? <Navigate to="/farmer/dashboard" />
+                  : <Navigate to="/home" />
+                : <Navigate to="/" />
             }
           />
+
         </Routes>
       </div>
 
-      {/* 💡 Tip Banner */}
-      {!hideLayout && isAuthenticated && userRole === "user" && <TipBanner />}
+      {/* TIP BANNER FOR NORMAL USERS */}
+      {!hideLayout && isAuthenticated && userRole === "user" && (
+        <TipBanner />
+      )}
     </div>
   );
 }

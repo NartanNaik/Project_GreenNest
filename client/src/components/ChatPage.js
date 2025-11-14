@@ -18,8 +18,13 @@ const ChatPage = () => {
   const token = localStorage.getItem("token");
   const customerId = jwtDecode(token).userId;
 
-  // Fetch farmer & messages
+  // 🚨 Validate ObjectId (24 hex chars)
+  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(recipientId);
+
+  // 👉 Hooks must run ALWAYS — no return before them!
   useEffect(() => {
+    if (!isValidObjectId) return; // ❗ Skip execution, but hook still exists
+
     const load = async () => {
       try {
         const f = await axios.get(`http://localhost:5000/farmers/${recipientId}`);
@@ -36,7 +41,7 @@ const ChatPage = () => {
       }
     };
 
-    if (recipientId) load();
+    load();
     socket.emit("joinRoom", customerId);
 
     socket.off("receiveMessage");
@@ -50,16 +55,15 @@ const ChatPage = () => {
     });
 
     return () => socket.off("receiveMessage");
-  }, [customerId, recipientId]);
+  }, [customerId, recipientId, isValidObjectId]);
 
-  // Autoscroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // SEND
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !isValidObjectId) return;
 
     const payload = {
       text: newMessage,
@@ -71,7 +75,6 @@ const ChatPage = () => {
 
     try {
       await axios.post("http://localhost:5000/messages", payload);
-      // DO NOT add to messages — socket will do that
     } catch (err) {
       console.error("❌ Send error:", err);
     }
@@ -80,20 +83,34 @@ const ChatPage = () => {
   // CLEAR CHAT
   const clearChat = async () => {
     if (!window.confirm("Clear entire chat?")) return;
+    if (!isValidObjectId) return;
+
     await axios.delete(
       `http://localhost:5000/messages/clear/${customerId}/${recipientId}`
     );
     setMessages([]);
   };
 
+  // 👉 NOW we safely validate AFTER hooks
+  if (!isValidObjectId) {
+    return (
+      <div style={{ padding: "20px", fontSize: "18px", color: "red" }}>
+        Invalid chat selected.
+        <br />
+        <button onClick={() => navigate(-1)}>Go Back</button>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-page-wrapper">
       <div className="chat-container">
         <div className="chat-header">
           <div className="header-left-content">
-            <button onClick={() => navigate(-1)} className="header-button back-button">
-              <FaArrowLeft />
-            </button>
+          <button onClick={() => navigate("/farmer/dashboard")} className="header-button back-button">
+  <FaArrowLeft />
+</button>
+
 
             <div className="header-user-info">
               <div className="header-avatar">{farmer?.name?.[0] || "F"}</div>

@@ -1,0 +1,282 @@
+/* ------------------------------
+   PAGE LAYOUT
+------------------------------ */
+.food-list-container {
+  padding: 25px;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  min-height: 100vh;
+}
+
+/* ------------------------------
+   SEARCH + FILTER SECTION
+------------------------------ */
+.search-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  margin-bottom: 25px;
+}
+
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #f1f7ff;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  transition: 0.3s;
+}
+
+.search-bar:hover {
+  border-color: #2196f3;
+  box-shadow: 0 0 10px rgba(33,150,243,0.3);
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  margin-left: 10px;
+  font-size: 1.1rem;
+}
+
+.search-icon {
+  color: #2196f3;
+  font-size: 1.3rem;
+}
+
+/* Filters */
+.filter-container {
+  display: flex;
+  gap: 15px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.filter-group label {
+  font-weight: 600;
+}
+
+.filter-group select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 2px solid #2196f3;
+  background: white;
+  color: #0d47a1;
+}
+
+/* ------------------------------
+   CATEGORY HEADER
+------------------------------ */
+.category-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 12px;
+  padding-left: 5px;
+  color: #0d47a1;
+  border-left: 5px solid #2196f3;
+}
+
+/* ------------------------------
+   FOOD ITEM CARD
+------------------------------ */
+.food-item-card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 15px;
+  transition: 0.25s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.food-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+}
+
+/* Name + Status */
+.food-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-item-name {
+  font-size: 1.25rem;
+  color: #0d47a1;
+  font-weight: 600;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* ------------------------------
+   DETAILS
+------------------------------ */
+.food-item-details p {
+  margin: 5px 0;
+  color: #09489e;
+  font-size: 1rem;
+}
+
+.expired-text {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* ------------------------------
+   DONATION ALERT BOX
+------------------------------ */
+.donation-alert {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff8e1;
+  border-left: 4px solid #ffc107;
+  border-radius: 8px;
+}
+
+.donation-alert p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.donation-info-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.donation-info-btn:hover {
+  background: #0d47a1;
+}
+
+/* ------------------------------
+   ACTION BUTTONS
+------------------------------ */
+.food-item-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.waste-btn {
+  background: #ffa726;
+  border: none;
+  color: white;
+}
+
+.waste-btn:hover {
+  background: #fb8c00;
+}
+
+.delete-btn {
+  background: #e53935;
+  color: white;
+  border: none;
+}
+
+.delete-btn:hover {
+  background: #b71c1c;
+}
+
+/* ------------------------------
+   "NO ITEMS" MESSAGE
+------------------------------ */
+.no-items-message {
+  text-align: center;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.add-item-btn {
+  margin-top: 12px;
+  background: #0d47a1;
+  padding: 10px 15px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.add-item-btn:hover {
+  background: #08306a;
+}
+
+/* ------------------------------
+   DONATION MODAL
+------------------------------ */
+.donation-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.donation-modal {
+  background: white;
+  width: 460px;
+  padding: 22px;
+  border-radius: 16px;
+  box-shadow: 0px 6px 25px rgba(0,0,0,0.2);
+  animation: fadeIn 0.4s ease;
+}
+
+.donation-modal h3 {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+  color: #0d47a1;
+  text-align: center;
+}
+
+.donation-link {
+  color: #0d47a1;
+  font-weight: bold;
+}
+
+.close-modal-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px;
+  background: #0d47a1;
+  color: white;
+  border: none;
+  border-radius: 10px;
+}
+
+.close-modal-btn:hover {
+  background: #08306a;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

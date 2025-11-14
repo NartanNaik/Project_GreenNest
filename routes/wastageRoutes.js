@@ -98,7 +98,6 @@ router.get("/chart", authenticate, async (req, res) => {
 
   try {
     const parsedDate = new Date(date);
-    const currentDate = new Date();
     let startDate, endDate;
 
     if (mode === "day") {
@@ -117,31 +116,23 @@ router.get("/chart", authenticate, async (req, res) => {
       return res.status(400).json({ error: "Invalid mode parameter" });
     }
 
-    console.log(`🔍 Looking for wasted items between ${startDate} and ${endDate}`);
+    console.log(`🔍 Looking for wasted/expired items between ${startDate} and ${endDate}`);
 
-    // ✅ Only include ACTIVE items, exclude deleted ones completely
     const activeFoodItems = await FoodItem.find({
       userId: req.user.userId,
       $or: [
+        // ⭐ manually wasted
         { isWasted: true, wastedAt: { $gte: startDate, $lte: endDate } },
-        { expiryDate: { $gte: startDate, $lte: endDate } },
+
+        // ⭐ expired items => expiry <= endDate
+        { expiryDate: { $lte: endDate } }
       ],
     });
-
-    // ❌ We no longer merge DeletedFoodItem data here
-    // Deleted items should not appear in wastage/expired graph
-
-    // Optional: Clean old deleted entries that were already shown before
-    await DeletedFoodItem.updateMany(
-      { userId: req.user.userId, clearedFromGraph: false },
-      { $set: { clearedFromGraph: true } }
-    );
 
     const categoryMap = {};
     activeFoodItems.forEach((item) => {
       categoryMap[item.category] = (categoryMap[item.category] || 0) + 1;
     });
-
 
     const categories = Object.keys(categoryMap).map((k) => ({
       name: k,
@@ -155,13 +146,13 @@ router.get("/chart", authenticate, async (req, res) => {
       return res.json({ categories: [], total: 0 });
     }
 
-    console.log(`✅ Chart data ready: ${total} items`);
     res.json({ categories, total });
   } catch (err) {
     console.error("❌ Error fetching wastage chart data:", err);
     res.status(500).json({ error: "Failed to fetch chart data" });
   }
 });
+
 
 // ✅ Reset wastage data
 router.post("/reset", authenticate, async (req, res) => {

@@ -7,44 +7,40 @@ import "./ConversationList.css";
 const FarmerChatList = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [autoOpened, setAutoOpened] = useState(false); // ⭐ prevents redirect loop
   const navigate = useNavigate();
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return navigate("/login");
 
-  // Load all conversations
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return navigate("/login");
+  const { userId } = jwtDecode(token);
 
-    const { userId } = jwtDecode(token);
-
-    const load = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/messages/conversations/${userId}`
-        );
-        setConversations(res.data);
-      } catch (err) {
-        console.error("Error fetching:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [navigate]);
-
-  // ⭐ FIXED AUTO-OPEN LOGIC
-  // Only run ONE TIME — not when user presses Back
-  useEffect(() => {
-    if (!loading && conversations.length > 0 && !autoOpened) {
-      const latest = conversations.reduce((a, b) =>
-        new Date(a.timestamp) > new Date(b.timestamp) ? a : b
+  const load = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/messages/conversations/${userId}`
       );
-
-      setAutoOpened(true); // 🚀 prevents it from running again
-      navigate(`/chat/${latest.partnerId}`);
+      setConversations(res.data);
+    } catch (err) {
+      console.error("Error fetching:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [loading, conversations, autoOpened, navigate]);
+  };
+
+  load();
+}, [navigate]);
+
+// ⭐ NEW AUTO-OPEN LOGIC ⭐
+useEffect(() => {
+  if (!loading && conversations.length > 0) {
+    const latest = conversations.reduce((a, b) =>
+      new Date(a.timestamp) > new Date(b.timestamp) ? a : b
+    );
+
+    navigate(`/chat/${latest.partnerId}`); // 🚀 Auto open
+  }
+}, [loading, conversations, navigate]);
+
 
   const openChat = (partnerId) => {
     navigate(`/chat/${partnerId}`);
@@ -60,7 +56,8 @@ const FarmerChatList = () => {
   return (
     <div className="chat-page-wrapper">
       <div className="chat-container">
-        {/* HEADER */}
+
+        {/* HEADER MATCHING CHATPAGE */}
         <div className="chat-header">
           <div className="header-left-content">
             <div className="header-user-info">

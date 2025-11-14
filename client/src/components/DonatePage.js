@@ -37,10 +37,9 @@ const DonatePage = () => {
     navigate(`/chat/${farmerId}`);
   };
 
-  const handleDonate = (farmerId) => {
-    alert(`Donating to farmer ${farmerId}... (feature not implemented)`);
-    // TODO: Implement donation logic or navigation
-  };
+ const handleDonate = (farmerId) => {
+  navigate(`/donate/select-food?farmerId=${farmerId}`);
+};
 
   // --- Conditional Rendering ---
 
@@ -78,12 +77,7 @@ const DonatePage = () => {
               </p>
 
               <div className="button-group">
-                <button
-                  className="btn donate-btn"
-                  onClick={() => handleDonate(farmer.id)}
-                >
-                  Donate Food
-                </button>
+
                 <button
                   className="btn message-btn"
                   onClick={() => handleMessage(farmer.id)}
